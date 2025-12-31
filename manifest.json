@@ -1,0 +1,17 @@
+{
+  "name": "3-Nin Launcher Green",
+  "short_name": "3-Nin L",
+  "description": "Customizable PWA Launcher with Sora, Maple and Sensei",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#2d362e",
+  "theme_color": "#3e4d3f",
+  "icons": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
