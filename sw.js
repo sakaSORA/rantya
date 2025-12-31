@@ -1,4 +1,4 @@
-const CACHE_NAME = 'app-v15-green'; // 更新時はここを変更
+const CACHE_NAME = 'app-v17-green'; // 更新時はここを変更
 const urlsToCache = [
   './',
   './index.html',
