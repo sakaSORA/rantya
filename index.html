@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3-Nin Launcher V21</title>
+    <title>3-Nin Launcher V22</title>
     <meta name="theme-color" content="#3a3a3a">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-512.png">
@@ -11,51 +11,37 @@
     <style>
         :root { 
             --bg: #2b2b2b; --header-bg: #3a3a3a; --border: #666; --text-main: #e0e0e0; --text-sub: #b0b0b0;
-            /* 6色パステル */
             --c-default: #4a4a4a; --c-blue: #3d5a80; --c-brown: #6d5959; 
             --c-green: #4a5d4c; --c-pink: #8e5d6a; --c-slate: #455a64;
         }
-        
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; color: var(--text-main); }
-
         .header { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px; background: var(--header-bg); border-bottom: 2px solid var(--border); }
         .header button { padding: 10px 0; font-size: 0.85rem; font-weight: bold; border: 1.5px solid var(--border); border-radius: 8px; background: #555; color: white; }
         .btn-active { border-color: #888 !important; background: var(--bg) !important; color: #fff !important; }
-
         .app-list { flex: 1; overflow-y: auto; padding: 6px; }
         .app-item { display: flex; align-items: center; border: 1.2px solid var(--border); border-radius: 12px; margin-bottom: 6px; padding: 8px 12px; min-height: 66px; position: relative; }
-        
         .bg-default { background: var(--c-default); } .bg-blue { background: var(--c-blue); border-color: #5dade2; }
         .bg-brown { background: var(--c-brown); border-color: #a98484; } .bg-green { background: var(--c-green); border-color: #81c784; }
         .bg-pink { background: var(--c-pink); border-color: #f06292; } .bg-slate { background: var(--c-slate); border-color: #90a4ae; }
-        
         .icon-area { width: 52px; height: 52px; min-width: 52px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .icon-area img { width: 100%; height: 100%; object-fit: cover; }
-
-        /* シンボル画像用のスタイル（少し内側に余白を持たせる） */
         .symbol-img { width: 85% !important; height: 85% !important; object-fit: contain !important; opacity: 0.8; }
-
         .info-container { flex: 1; margin-left: 12px; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
         .row-text { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; overflow: hidden; }
         .app-title { font-size: 1.15rem; font-weight: 800; color: #fff; }
         .app-desc { font-size: 0.85rem; color: var(--text-sub); text-overflow: ellipsis; overflow: hidden; }
-
         .row-buttons { display: none; flex-direction: column; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); }
         .edit-mode .row-buttons { display: flex; }
-
         .color-selector { display: flex; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
         .color-dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; cursor: pointer; }
-        
         .action-btns { display: flex; gap: 4px; }
         .action-btns button { flex: 1; font-size: 0.7rem; padding: 7px 0; border: 1px solid #777; border-radius: 6px; background: #666; color: white; font-weight: bold; }
         .reset-btn { background: #546e7a !important; } .del-btn { background: #c0392b !important; }
-        
         .app-list::-webkit-scrollbar { width: 0; }
     </style>
 </head>
 <body>
-
     <div class="header">
         <input type="file" id="txtFileInput" accept=".txt" style="display:none;" onchange="handleTxtFile(this)">
         <button onclick="document.getElementById('txtFileInput').click()">TXT読込</button>
@@ -63,23 +49,21 @@
         <button onclick="exportData()">保存(JSON)</button>
         <button onclick="importData()">復元(JSON)</button>
     </div>
-
     <input type="file" id="iconFileInput" accept="image/*" style="display:none;">
     <div id="appList" class="app-list"></div>
 
 <script>
     let isEditMode = false;
-    let myApps = JSON.parse(localStorage.getItem('launcher-v21')) || [];
+    let myApps = JSON.parse(localStorage.getItem('launcher-v22')) || [];
     let dragSrcIndex = null; let currentEditingId = null;
 
     function saveToStorage() {
-        try { localStorage.setItem('launcher-v21', JSON.stringify(myApps)); } 
-        catch (e) { alert("容量制限を超えました。不要な画像を削除してください。"); }
+        try { localStorage.setItem('launcher-v22', JSON.stringify(myApps)); } 
+        catch (e) { alert("LocalStorageの容量制限に達しました。不要な画像を削除するか、画消ボタンでリセットしてください。"); }
     }
 
     function render() {
-        const list = document.getElementById('appList');
-        list.innerHTML = '';
+        const list = document.getElementById('appList'); list.innerHTML = '';
         document.body.classList.toggle('edit-mode', isEditMode);
         document.getElementById('editToggleBtn').innerText = isEditMode ? "完了" : "整理/編集";
 
@@ -97,12 +81,10 @@
                 item.ondragend = () => item.classList.remove('dragging');
             }
             
-            // アイコン表示：手動登録 > 分割したシンボル画像 > 文字
             let iconContent = '';
             if (app.customIcon) {
                 iconContent = `<img src="${app.customIcon}" loading="lazy">`;
             } else {
-                // 画像ファイル名はクラス名と一致させておく（例: bg-blue.png）
                 iconContent = `<img src="${colorClass}.png" class="symbol-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
                                <span style="display:none">${app.name.charAt(0)}</span>`;
             }
@@ -137,22 +119,54 @@
         saveToStorage();
     }
 
-    // --- 各種機能 ---
+    // --- 高速・軽量化のための自動リサイズロジック ---
+    function triggerIconEdit(id) { 
+        currentEditingId = id; 
+        document.getElementById('iconFileInput').click(); 
+    }
+
+    document.getElementById('iconFileInput').onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const img = new Image();
+            img.onload = () => {
+                // キャンバスを使用して128pxにリサイズ
+                const canvas = document.createElement('canvas');
+                const SIZE = 128; // ランチャー表示(52px)に対して十分な解像度
+                canvas.width = SIZE;
+                canvas.height = SIZE;
+                const ctx = canvas.getContext('2d');
+                
+                // 正方形にクロップしながら描画
+                const minSide = Math.min(img.width, img.height);
+                const sx = (img.width - minSide) / 2;
+                const sy = (img.height - minSide) / 2;
+                ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, SIZE, SIZE);
+                
+                // 画質を少し落としてデータ量を劇的に削減 (0.7 = 70%)
+                const compressedData = canvas.toDataURL('image/jpeg', 0.7);
+                
+                const app = myApps.find(a => a.id === currentEditingId);
+                if(app) {
+                    app.customIcon = compressedData;
+                    render();
+                }
+            };
+            img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+    };
+
     function resetIcon(id) {
         const app = myApps.find(a => a.id === id);
-        if(app && confirm("登録画像を消して、キャラシンボルに戻しますか？")) {
-            app.customIcon = null; render();
-        }
+        if(app && confirm("登録画像を消してシンボルに戻しますか？")) { app.customIcon = null; render(); }
     }
-
-    function changeColor(id, className) {
-        const app = myApps.find(a => a.id === id);
-        if(app) { app.color = className; render(); }
-    }
-
+    function changeColor(id, className) { const app = myApps.find(a => a.id === id); if(app) { app.color = className; render(); } }
     function launch(url) { if (!isEditMode) window.location.href = url; }
     function toggleEdit() { isEditMode = !isEditMode; render(); }
-    
     function handleDrop() {
         const targetIndex = this.dataset.index;
         if (dragSrcIndex !== null && dragSrcIndex !== targetIndex) {
@@ -161,16 +175,7 @@
             render();
         }
     }
-
-    // --- インポート/エクスポート ---
-    function handleTxtFile(input) {
-        const file = input.files[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = e => processRawText(e.target.result);
-        reader.readAsText(file, 'UTF-8');
-        input.value = '';
-    }
-
+    function handleTxtFile(input) { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = e => processRawText(e.target.result); reader.readAsText(file, 'UTF-8'); input.value = ''; }
     function processRawText(text) {
         const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
         lines.forEach(line => {
@@ -184,43 +189,10 @@
         });
         render();
     }
-
-    function triggerIconEdit(id) { currentEditingId = id; document.getElementById('iconFileInput').click(); }
-    document.getElementById('iconFileInput').onchange = function(e) {
-        const file = e.target.files[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = ev => { 
-            const app = myApps.find(a => a.id === currentEditingId); 
-            if(app) { app.customIcon = ev.target.result; render(); } 
-        };
-        reader.readAsDataURL(file);
-    };
-
-    function editDesc(id) {
-        const app = myApps.find(a => a.id === id);
-        const d = prompt(app.name + " の説明", app.desc);
-        if (d !== null) { app.desc = d; render(); }
-    }
-
-    function deleteApp(id) {
-        if (confirm("削除しますか？")) { myApps = myApps.filter(a => a.id !== id); render(); }
-    }
-
-    function exportData() {
-        const blob = new Blob([JSON.stringify(myApps)], {type: 'application/json'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'launcher_v21.json'; a.click();
-    }
-
-    function importData() {
-        const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
-        input.onchange = e => {
-            const reader = new FileReader();
-            reader.onload = () => { myApps = JSON.parse(reader.result); render(); };
-            reader.readAsText(e.target.files[0]);
-        };
-        input.click();
-    }
-
+    function editDesc(id) { const app = myApps.find(a => a.id === id); const d = prompt(app.name + " の説明", app.desc); if (d !== null) { app.desc = d; render(); } }
+    function deleteApp(id) { if (confirm("削除しますか？")) { myApps = myApps.filter(a => a.id !== id); render(); } }
+    function exportData() { const blob = new Blob([JSON.stringify(myApps)], {type: 'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'launcher_v22.json'; a.click(); }
+    function importData() { const input = document.createElement('input'); input.type = 'file'; input.accept = '.json'; input.onchange = e => { const reader = new FileReader(); reader.onload = () => { myApps = JSON.parse(reader.result); render(); }; reader.readAsText(e.target.files[0]); }; input.click(); }
     render();
 </script>
 </body>
