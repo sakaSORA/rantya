@@ -3,94 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3-Nin Launcher V24.1</title>
+    <title>3-Nin Launcher V25</title>
     <meta name="theme-color" content="#3a3a3a">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-512.png">
-
     <style>
         :root { 
             --bg: #2b2b2b; --header-bg: #3a3a3a; --border: #666; --text-main: #e0e0e0; --text-sub: #b0b0b0;
             --c-default: #4a4a4a; --c-blue: #3d5a80; --c-brown: #6d5959; 
             --c-green: #4a5d4c; --c-pink: #8e5d6a; --c-slate: #455a64;
         }
-        
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
-        body { 
-            font-family: sans-serif; background: var(--bg); margin: 0; 
-            display: flex; flex-direction: column; height: 100vh; 
-            overflow: hidden; color: var(--text-main); 
-        }
-
-        /* ヘッダー */
-        .header { 
-            display: grid; grid-template-columns: 1fr 1fr; gap: 6px; 
-            padding: 8px; background: var(--header-bg); border-bottom: 2px solid var(--border); 
-        }
-        .header button { 
-            padding: 10px 0; font-size: 0.85rem; font-weight: bold; 
-            border: 1.5px solid var(--border); border-radius: 8px; 
-            background: #555; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; color: var(--text-main); }
+        .header { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px; background: var(--header-bg); border-bottom: 2px solid var(--border); }
+        .header button { padding: 10px 0; font-size: 0.85rem; font-weight: bold; border: 1.5px solid var(--border); border-radius: 8px; background: #555; color: white; }
         .btn-active { border-color: #888 !important; background: var(--bg) !important; color: #fff !important; }
-
-        /* リスト */
         .app-list { flex: 1; overflow-y: auto; padding: 6px; }
-        .app-item { 
-            display: flex; align-items: center; border: 1.2px solid var(--border); 
-            border-radius: 12px; margin-bottom: 6px; padding: 8px 12px; 
-            min-height: 66px; position: relative; 
-        }
-        
-        .bg-default { background: var(--c-default); }
-        .bg-blue    { background: var(--c-blue); border-color: #5dade2; }
-        .bg-brown   { background: var(--c-brown); border-color: #a98484; }
-        .bg-green   { background: var(--c-green); border-color: #81c784; }
-        .bg-pink    { background: var(--c-pink);  border-color: #f06292; }
-        .bg-slate   { background: var(--c-slate); border-color: #90a4ae; }
-        
-        .app-item.dragging { opacity: 0.5; transform: scale(0.98); }
-
-        .icon-area { 
-            width: 52px; height: 52px; min-width: 52px; 
-            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); 
-            border-radius: 12px; display: flex; align-items: center; 
-            justify-content: center; overflow: hidden; 
-        }
+        .app-item { display: flex; align-items: center; border: 1.2px solid var(--border); border-radius: 12px; margin-bottom: 6px; padding: 8px 12px; min-height: 66px; position: relative; }
+        .bg-default { background: var(--c-default); } .bg-blue { background: var(--c-blue); border-color: #5dade2; }
+        .bg-brown { background: var(--c-brown); border-color: #a98484; } .bg-green { background: var(--c-green); border-color: #81c784; }
+        .bg-pink { background: var(--c-pink); border-color: #f06292; } .bg-slate { background: var(--c-slate); border-color: #90a4ae; }
+        .icon-area { width: 52px; height: 52px; min-width: 52px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .icon-area img { width: 100%; height: 100%; object-fit: cover; }
         .symbol-img { width: 85% !important; height: 85% !important; object-fit: contain !important; opacity: 0.8; }
-
         .info-container { flex: 1; margin-left: 12px; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
         .row-text { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; overflow: hidden; }
         .app-title { font-size: 1.15rem; font-weight: 800; color: #fff; }
         .app-desc { font-size: 0.85rem; color: var(--text-sub); text-overflow: ellipsis; overflow: hidden; }
-
-        /* 編集パネル */
-        .row-buttons { 
-            display: none; flex-direction: column; gap: 6px; 
-            margin-top: 8px; padding-top: 8px; 
-            border-top: 1px solid rgba(255,255,255,0.1); 
-        }
+        .row-buttons { display: none; flex-direction: column; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); }
         .edit-mode .row-buttons { display: flex; }
-
         .color-selector { display: flex; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
         .color-dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; cursor: pointer; }
-        
         .action-btns { display: flex; gap: 4px; }
-        .action-btns button { 
-            flex: 1; font-size: 0.75rem; padding: 7px 0; 
-            border: 1px solid #777; border-radius: 6px; 
-            background: #666; color: white; font-weight: bold; 
-        }
-        .reset-btn { background: #546e7a !important; }
-        .del-btn { background: #c0392b !important; border-color: #962d22 !important; }
-
+        .action-btns button { flex: 1; font-size: 0.75rem; padding: 7px 0; border: 1px solid #777; border-radius: 6px; background: #666; color: white; font-weight: bold; }
+        .reset-btn { background: #546e7a !important; } .del-btn { background: #c0392b !important; border-color: #962d22 !important; }
         .app-list::-webkit-scrollbar { width: 0; }
     </style>
 </head>
 <body>
-
     <div class="header">
         <input type="file" id="txtFileInput" accept=".txt" style="display:none;" onchange="handleTxtFile(this)">
         <button onclick="document.getElementById('txtFileInput').click()">TXT読込</button>
@@ -98,79 +48,62 @@
         <button onclick="exportDataFull()">保存(JSON)</button>
         <button onclick="importDataFull()">復元(JSON)</button>
     </div>
-
     <input type="file" id="iconFileInput" accept="image/*" style="display:none;">
     <div id="appList" class="app-list">読み込み中...</div>
 
 <script>
-    // Service Worker
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
+    // --- データ管理 ---
+    const STORAGE_KEY = '3-nin-launcher-final'; // 固定キー
+    let isEditMode = false;
+    let myApps = [];
+    let db;
+    const DB_NAME = "LauncherDB_Final";
+
+    // 以前のバージョンからのデータ移行
+    function migrateData() {
+        const oldKeys = ['launcher-v24-meta', 'launcher-v22', 'launcher-v18'];
+        for (const key of oldKeys) {
+            const oldData = localStorage.getItem(key);
+            if (oldData) {
+                console.log("Migrating data from:", key);
+                return JSON.parse(oldData);
+            }
+        }
+        return [];
     }
 
-    let isEditMode = false;
-    let myApps = JSON.parse(localStorage.getItem('launcher-v24-meta')) || [];
-    let currentEditingId = null;
-    let dragSrcIndex = null;
+    // データの初期ロード
+    myApps = JSON.parse(localStorage.getItem(STORAGE_KEY)) || migrateData();
 
-    // --- IndexedDB 管理 ---
-    const dbName = "LauncherDB_V24";
-    let db;
-    const request = indexedDB.open(dbName, 1);
-
+    // --- IndexedDB 初期化 ---
+    const request = indexedDB.open(DB_NAME, 1);
     request.onupgradeneeded = (e) => {
         db = e.target.result;
-        if (!db.objectStoreNames.contains("icons")) {
-            db.createObjectStore("icons", { keyPath: "id" });
-        }
+        if (!db.objectStoreNames.contains("icons")) db.createObjectStore("icons", { keyPath: "id" });
     };
-
     request.onsuccess = (e) => {
         db = e.target.result;
-        render(); // DB接続後に自動描画
+        render(); // DB準備完了後に描画
     };
+    request.onerror = () => { alert("データベースの起動に失敗しました。ブラウザの設定を確認してください。"); };
 
-    async function saveIconToDB(id, data) {
-        const txn = db.transaction("icons", "readwrite");
-        const store = txn.objectStore("icons");
-        return new Promise(r => {
-            const req = store.put({ id, data });
-            req.onsuccess = r;
-        });
-    }
-
-    async function deleteIconFromDB(id) {
-        const txn = db.transaction("icons", "readwrite");
-        const store = txn.objectStore("icons");
-        store.delete(id);
-    }
-
-    async function getAllIconsFromDB() {
-        return new Promise((resolve) => {
-            if (!db) return resolve([]);
-            const txn = db.transaction("icons", "readonly");
-            const store = txn.objectStore("icons");
-            const req = store.getAll();
-            req.onsuccess = () => resolve(req.result);
-        });
-    }
-
-    // --- メイン描画関数 ---
+    // --- メイン描画 ---
     async function render() {
         const list = document.getElementById('appList');
-        document.body.classList.toggle('edit-mode', isEditMode);
-        const toggleBtn = document.getElementById('editToggleBtn');
-        toggleBtn.innerText = isEditMode ? "完了" : "整理/編集";
-        toggleBtn.classList.toggle('btn-active', isEditMode);
+        if (!db) { list.innerHTML = '起動中...'; return; }
 
-        // 高速化のためDBのアイコンを一括ロード
-        const allIcons = await getAllIconsFromDB();
+        document.body.classList.toggle('edit-mode', isEditMode);
+        document.getElementById('editToggleBtn').innerText = isEditMode ? "完了" : "整理/編集";
+
+        // アイコンを一括取得
+        const allIcons = await new Promise(res => {
+            const txn = db.transaction("icons", "readonly");
+            const req = txn.objectStore("icons").getAll();
+            req.onsuccess = () => res(req.result);
+        });
         const iconMap = new Map(allIcons.map(i => [i.id, i.data]));
 
-        list.innerHTML = '';
-        if (myApps.length === 0) {
-            list.innerHTML = '<p style="text-align:center; color:#888; margin-top:20px;">TXT読込からアプリを追加してください</p>';
-        }
+        list.innerHTML = myApps.length === 0 ? '<p style="text-align:center;color:#888;margin-top:20px;">アプリを追加してください</p>' : '';
 
         myApps.forEach((app, index) => {
             const item = document.createElement('div');
@@ -219,65 +152,27 @@
             `;
             list.appendChild(item);
         });
-        localStorage.setItem('launcher-v24-meta', JSON.stringify(myApps));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(myApps));
     }
 
-    // --- バックアップ・復元 (画像含むフルパック) ---
-    async function exportDataFull() {
-        const allIcons = await getAllIconsFromDB();
-        const fullData = { meta: myApps, icons: allIcons };
-        const blob = new Blob([JSON.stringify(fullData)], {type: 'application/json'});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `launcher_full_backup.json`;
-        a.click();
+    // --- 各種機能 ---
+    async function saveIconToDB(id, data) {
+        const txn = db.transaction("icons", "readwrite");
+        await txn.objectStore("icons").put({ id, data });
     }
-
-    async function importDataFull() {
-        const input = document.createElement('input');
-        input.type = 'file'; input.accept = '.json';
-        input.onchange = e => {
-            const reader = new FileReader();
-            reader.onload = async () => {
-                try {
-                    const imported = JSON.parse(reader.result);
-                    if (imported.meta && imported.icons) {
-                        myApps = imported.meta;
-                        const txn = db.transaction("icons", "readwrite");
-                        const store = txn.objectStore("icons");
-                        for (const icon of imported.icons) { await store.put(icon); }
-                        render();
-                        alert("画像を含むフルバックアップを復元しました！");
-                    } else {
-                        myApps = imported;
-                        render();
-                        alert("設定のみ復元しました");
-                    }
-                } catch(e) { alert("無効なファイルです"); }
-            };
-            reader.readAsText(e.target.files[0]);
-        };
-        input.click();
-    }
-
-    // --- 編集機能 ---
-    function triggerIconEdit(id) { currentEditingId = id; document.getElementById('iconFileInput').click(); }
 
     document.getElementById('iconFileInput').onchange = function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+        const file = e.target.files[0]; if (!file) return;
         const reader = new FileReader();
         reader.onload = (ev) => {
             const img = new Image();
             img.onload = async () => {
                 const canvas = document.createElement('canvas');
-                const SIZE = 192; // 解像度と容量のバランス
-                canvas.width = SIZE; canvas.height = SIZE;
+                const SIZE = 192; canvas.width = SIZE; canvas.height = SIZE;
                 const ctx = canvas.getContext('2d');
-                const minSide = Math.min(img.width, img.height);
-                ctx.drawImage(img, (img.width-minSide)/2, (img.height-minSide)/2, minSide, minSide, 0, 0, SIZE, SIZE);
-                const compressedData = canvas.toDataURL('image/jpeg', 0.8);
-                await saveIconToDB(currentEditingId, compressedData);
+                const min = Math.min(img.width, img.height);
+                ctx.drawImage(img, (img.width-min)/2, (img.height-min)/2, min, min, 0, 0, SIZE, SIZE);
+                await saveIconToDB(currentEditingId, canvas.toDataURL('image/jpeg', 0.8));
                 render();
             };
             img.src = ev.target.result;
@@ -285,11 +180,14 @@
         reader.readAsDataURL(file);
     };
 
-    async function resetIcon(id) { if(confirm("画像を消してシンボルに戻しますか？")) { await deleteIconFromDB(id); render(); } }
-    function changeColor(id, className) { const app = myApps.find(a => a.id === id); if(app) { app.color = className; render(); } }
+    async function resetIcon(id) { if(confirm("画像を消しますか？")) { const txn = db.transaction("icons", "readwrite"); await txn.objectStore("icons").delete(id); render(); } }
     function launch(url) { if (!isEditMode) window.location.href = url; }
     function toggleEdit() { isEditMode = !isEditMode; render(); }
-
+    function changeColor(id, className) { const app = myApps.find(a => a.id === id); if(app) { app.color = className; render(); } }
+    function editDesc(id) { const app = myApps.find(a => a.id === id); const d = prompt(app.name + " の説明", app.desc); if (d !== null) { app.desc = d; render(); } }
+    async function deleteApp(id) { if (confirm("削除しますか？")) { myApps = myApps.filter(a => a.id !== id); const txn = db.transaction("icons", "readwrite"); await txn.objectStore("icons").delete(id); render(); } }
+    
+    let dragSrcIndex = null;
     function handleDrop() {
         const targetIndex = this.dataset.index;
         if (dragSrcIndex !== null && dragSrcIndex !== targetIndex) {
@@ -304,7 +202,7 @@
         const reader = new FileReader();
         reader.onload = e => processRawText(e.target.result);
         reader.readAsText(file, 'UTF-8');
-        input.value = ''; 
+        input.value = '';
     }
 
     function processRawText(text) {
@@ -313,7 +211,7 @@
             const parts = line.trim().split(/[\s　\t]+/);
             if (parts.length >= 2) {
                 const name = parts[0], url = parts[parts.length - 1].trim();
-                if (url.toLowerCase().includes('http') && !myApps.some(a => a.url === url)) {
+                if (url.includes('http') && !myApps.some(a => a.url === url)) {
                     myApps.push({ id: 'id-'+Date.now()+'-'+Math.random().toString(36).substr(2,5), name, url, desc: "", color: 'bg-default' });
                 }
             }
@@ -321,19 +219,32 @@
         render();
     }
 
-    function editDesc(id) {
-        const app = myApps.find(a => a.id === id);
-        const d = prompt(app.name + " の説明", app.desc);
-        if (d !== null) { app.desc = d; render(); }
+    async function exportDataFull() {
+        const txn = db.transaction("icons", "readonly");
+        const icons = await new Promise(r => { const req = txn.objectStore("icons").getAll(); req.onsuccess = () => r(req.result); });
+        const blob = new Blob([JSON.stringify({ meta: myApps, icons })], {type: 'application/json'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `launcher_backup.json`; a.click();
     }
 
-    async function deleteApp(id) {
-        if (confirm("削除しますか？")) {
-            myApps = myApps.filter(a => a.id !== id);
-            await deleteIconFromDB(id);
-            render();
-        }
+    async function importDataFull() {
+        const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
+        input.onchange = e => {
+            const reader = new FileReader();
+            reader.onload = async () => {
+                const imported = JSON.parse(reader.result);
+                if (imported.meta && imported.icons) {
+                    myApps = imported.meta;
+                    const txn = db.transaction("icons", "readwrite");
+                    for (const icon of imported.icons) await txn.objectStore("icons").put(icon);
+                    render();
+                    alert("復元完了！");
+                }
+            };
+            reader.readAsText(e.target.files[0]);
+        };
+        input.click();
     }
+    function triggerIconEdit(id) { currentEditingId = id; document.getElementById('iconFileInput').click(); }
 </script>
 </body>
 </html>
