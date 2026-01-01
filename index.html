@@ -3,12 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3-Nin Launcher V22</title>
-    <meta name="theme-color" content="#3a3a3a">
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon-512.png">
-
+    <title>3-Nin Launcher V24 - Full Backup</title>
     <style>
+        /* CSSはV23を継承 */
         :root { 
             --bg: #2b2b2b; --header-bg: #3a3a3a; --border: #666; --text-main: #e0e0e0; --text-sub: #b0b0b0;
             --c-default: #4a4a4a; --c-blue: #3d5a80; --c-brown: #6d5959; 
@@ -38,7 +35,6 @@
         .action-btns { display: flex; gap: 4px; }
         .action-btns button { flex: 1; font-size: 0.7rem; padding: 7px 0; border: 1px solid #777; border-radius: 6px; background: #666; color: white; font-weight: bold; }
         .reset-btn { background: #546e7a !important; } .del-btn { background: #c0392b !important; }
-        .app-list::-webkit-scrollbar { width: 0; }
     </style>
 </head>
 <body>
@@ -46,28 +42,73 @@
         <input type="file" id="txtFileInput" accept=".txt" style="display:none;" onchange="handleTxtFile(this)">
         <button onclick="document.getElementById('txtFileInput').click()">TXT読込</button>
         <button id="editToggleBtn" onclick="toggleEdit()">整理/編集</button>
-        <button onclick="exportData()">保存(JSON)</button>
-        <button onclick="importData()">復元(JSON)</button>
+        <button onclick="exportDataFull()">保存(JSON)</button>
+        <button onclick="importDataFull()">復元(JSON)</button>
     </div>
     <input type="file" id="iconFileInput" accept="image/*" style="display:none;">
     <div id="appList" class="app-list"></div>
 
 <script>
     let isEditMode = false;
-    let myApps = JSON.parse(localStorage.getItem('launcher-v22')) || [];
-    let dragSrcIndex = null; let currentEditingId = null;
+    let myApps = JSON.parse(localStorage.getItem('launcher-v24-meta')) || [];
+    let currentEditingId = null;
+    let dragSrcIndex = null;
 
-    function saveToStorage() {
-        try { localStorage.setItem('launcher-v22', JSON.stringify(myApps)); } 
-        catch (e) { alert("LocalStorageの容量制限に達しました。不要な画像を削除するか、画消ボタンでリセットしてください。"); }
+    // --- IndexedDB ---
+    const dbName = "LauncherDB_V24";
+    let db;
+    const request = indexedDB.open(dbName, 1);
+    request.onupgradeneeded = (e) => {
+        db = e.target.result;
+        db.createObjectStore("icons", { keyPath: "id" });
+    };
+    request.onsuccess = (e) => {
+        db = e.target.result;
+        render();
+    };
+
+    async function getIconFromDB(id) {
+        return new Promise((resolve) => {
+            if (!db) return resolve(null);
+            const txn = db.transaction("icons", "readonly");
+            const store = txn.objectStore("icons");
+            const req = store.get(id);
+            req.onsuccess = () => resolve(req.result ? req.result.data : null);
+            req.onerror = () => resolve(null);
+        });
     }
 
-    function render() {
-        const list = document.getElementById('appList'); list.innerHTML = '';
+    async function saveIconToDB(id, data) {
+        const txn = db.transaction("icons", "readwrite");
+        const store = txn.objectStore("icons");
+        return new Promise(r => {
+            const req = store.put({ id, data });
+            req.onsuccess = r;
+        });
+    }
+
+    async function deleteIconFromDB(id) {
+        const txn = db.transaction("icons", "readwrite");
+        const store = txn.objectStore("icons");
+        store.delete(id);
+    }
+
+    async function getAllIconsFromDB() {
+        return new Promise((resolve) => {
+            const txn = db.transaction("icons", "readonly");
+            const store = txn.objectStore("icons");
+            const req = store.getAll();
+            req.onsuccess = () => resolve(req.result);
+        });
+    }
+
+    async function render() {
+        const list = document.getElementById('appList');
+        list.innerHTML = '';
         document.body.classList.toggle('edit-mode', isEditMode);
         document.getElementById('editToggleBtn').innerText = isEditMode ? "完了" : "整理/編集";
 
-        myApps.forEach((app, index) => {
+        for (const [index, app] of myApps.entries()) {
             const item = document.createElement('div');
             const colorClass = app.color || 'bg-default';
             item.className = `app-item ${colorClass}`;
@@ -81,13 +122,11 @@
                 item.ondragend = () => item.classList.remove('dragging');
             }
             
-            let iconContent = '';
-            if (app.customIcon) {
-                iconContent = `<img src="${app.customIcon}" loading="lazy">`;
-            } else {
-                iconContent = `<img src="${colorClass}.png" class="symbol-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
-                               <span style="display:none">${app.name.charAt(0)}</span>`;
-            }
+            const customIcon = await getIconFromDB(app.id);
+            let iconContent = customIcon 
+                ? `<img src="${customIcon}" loading="lazy">` 
+                : `<img src="${colorClass}.png" class="symbol-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+                   <span style="display:none">${app.name.charAt(0)}</span>`;
 
             item.innerHTML = `
                 <div class="icon-area" onclick="launch('${app.url}')">${iconContent}</div>
@@ -115,55 +154,80 @@
                 </div>
             `;
             list.appendChild(item);
-        });
-        saveToStorage();
+        }
+        localStorage.setItem('launcher-v24-meta', JSON.stringify(myApps));
     }
 
-    // --- 高速・軽量化のための自動リサイズロジック ---
-    function triggerIconEdit(id) { 
-        currentEditingId = id; 
-        document.getElementById('iconFileInput').click(); 
+    // --- V24 強化機能: 画像込みのフルバックアップ ---
+    async function exportDataFull() {
+        const allIcons = await getAllIconsFromDB();
+        const fullData = {
+            meta: myApps,
+            icons: allIcons
+        };
+        const blob = new Blob([JSON.stringify(fullData)], {type: 'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `launcher_full_backup_${Date.now()}.json`;
+        a.click();
     }
 
+    async function importDataFull() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = e => {
+            const reader = new FileReader();
+            reader.onload = async () => {
+                try {
+                    const imported = JSON.parse(reader.result);
+                    if (imported.meta && imported.icons) {
+                        // メタデータの復元
+                        myApps = imported.meta;
+                        // 画像データのDB復元
+                        for (const icon of imported.icons) {
+                            await saveIconToDB(icon.id, icon.data);
+                        }
+                        render();
+                        alert("画像を含む全てのデータを復元しました！");
+                    } else {
+                        // 旧バージョンのJSONだった場合
+                        myApps = imported;
+                        render();
+                        alert("設定のみ復元しました（画像は含まれていません）");
+                    }
+                } catch(err) { alert("ファイル形式が正しくありません"); }
+            };
+            reader.readAsText(e.target.files[0]);
+        };
+        input.click();
+    }
+
+    // --- 以降、基本機能 ---
     document.getElementById('iconFileInput').onchange = function(e) {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (ev) => {
             const img = new Image();
-            img.onload = () => {
-                // キャンバスを使用して128pxにリサイズ
+            img.onload = async () => {
                 const canvas = document.createElement('canvas');
-                const SIZE = 128; // ランチャー表示(52px)に対して十分な解像度
-                canvas.width = SIZE;
-                canvas.height = SIZE;
+                const SIZE = 192;
+                canvas.width = SIZE; canvas.height = SIZE;
                 const ctx = canvas.getContext('2d');
-                
-                // 正方形にクロップしながら描画
                 const minSide = Math.min(img.width, img.height);
-                const sx = (img.width - minSide) / 2;
-                const sy = (img.height - minSide) / 2;
-                ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, SIZE, SIZE);
-                
-                // 画質を少し落としてデータ量を劇的に削減 (0.7 = 70%)
-                const compressedData = canvas.toDataURL('image/jpeg', 0.7);
-                
-                const app = myApps.find(a => a.id === currentEditingId);
-                if(app) {
-                    app.customIcon = compressedData;
-                    render();
-                }
+                ctx.drawImage(img, (img.width-minSide)/2, (img.height-minSide)/2, minSide, minSide, 0, 0, SIZE, SIZE);
+                const compressedData = canvas.toDataURL('image/jpeg', 0.8);
+                await saveIconToDB(currentEditingId, compressedData);
+                render();
             };
             img.src = ev.target.result;
         };
         reader.readAsDataURL(file);
     };
 
-    function resetIcon(id) {
-        const app = myApps.find(a => a.id === id);
-        if(app && confirm("登録画像を消してシンボルに戻しますか？")) { app.customIcon = null; render(); }
-    }
+    function triggerIconEdit(id) { currentEditingId = id; document.getElementById('iconFileInput').click(); }
+    async function resetIcon(id) { if(confirm("画像を消しますか？")) { await deleteIconFromDB(id); render(); } }
     function changeColor(id, className) { const app = myApps.find(a => a.id === id); if(app) { app.color = className; render(); } }
     function launch(url) { if (!isEditMode) window.location.href = url; }
     function toggleEdit() { isEditMode = !isEditMode; render(); }
@@ -183,17 +247,14 @@
             if (parts.length >= 2) {
                 const name = parts[0], url = parts[parts.length - 1].trim();
                 if (url.toLowerCase().includes('http') && !myApps.some(a => a.url === url)) {
-                    myApps.push({ id: 'id-'+Date.now()+'-'+Math.random().toString(36).substr(2,5), name, url, desc: "", customIcon: null, color: 'bg-default' });
+                    myApps.push({ id: 'id-'+Date.now()+'-'+Math.random().toString(36).substr(2,5), name, url, desc: "", color: 'bg-default' });
                 }
             }
         });
         render();
     }
     function editDesc(id) { const app = myApps.find(a => a.id === id); const d = prompt(app.name + " の説明", app.desc); if (d !== null) { app.desc = d; render(); } }
-    function deleteApp(id) { if (confirm("削除しますか？")) { myApps = myApps.filter(a => a.id !== id); render(); } }
-    function exportData() { const blob = new Blob([JSON.stringify(myApps)], {type: 'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'launcher_v22.json'; a.click(); }
-    function importData() { const input = document.createElement('input'); input.type = 'file'; input.accept = '.json'; input.onchange = e => { const reader = new FileReader(); reader.onload = () => { myApps = JSON.parse(reader.result); render(); }; reader.readAsText(e.target.files[0]); }; input.click(); }
-    render();
+    async function deleteApp(id) { if (confirm("削除しますか？")) { myApps = myApps.filter(a => a.id !== id); await deleteIconFromDB(id); render(); } }
 </script>
 </body>
 </html>
