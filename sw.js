@@ -1,5 +1,5 @@
 /**
- * 3-Nin Launcher V23 - Service Worker
+ * 3-Nin Launcher V24.1 - Service Worker
  * 更新時は CACHE_NAME を変更してアップロードしてください。
  */
 const CACHE_NAME = '3-nin-launcher-v21';
